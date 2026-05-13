@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TYT - Live Test</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span id="timer">0</span>
+                <span>Seconds Left</span>
+            </div>
+            <div class="stat-item" style="text-align: right;">
+                <span id="diff-label" style="font-size: 1.2rem;">Easy</span>
+                <span>Difficulty</span>
+            </div>
+        </div>
+
+        <div class="text-display" id="quote-display">
+            <div id="cursor" class="cursor"></div>
+            </div>
+        
+        <textarea id="input-area" autofocus autocomplete="off"></textarea>
+
+        <div class="controls">
+            <button id="soundToggle" class="btn-secondary">🔊 Sound: ON</button>
+            <button onclick="finish()" class="btn-primary">Submit Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Apply Theme
+        document.body.setAttribute('data-theme', localStorage.getItem('tyt-theme') || 'default');
+
+        // Paragraph Data
+        const data = {
+            easy: [
+                "The primary goal of coding is to solve problems efficiently. A simple design is often the best solution for complex issues. By breaking down tasks into smaller chunks, you can write cleaner code. Practice is the key to improving your typing speed and accuracy.",
+                "Reading documentation is an essential skill for any developer. It helps you understand how different functions and libraries work. Do not rush when you type, focus on hitting the right keys first. Speed will naturally come as your muscle memory builds up over time."
+            ],
+            medium: [
+                "JavaScript handles events using a non-blocking input and output model. This allows the browser to remain responsive even while processing heavy data in the background. Understanding the event loop is crucial for mastering asynchronous functions and promises.",
+                "Responsive web design ensures that your application looks good on all devices, from desktop monitors to mobile phones. CSS variables and flexible grid layouts make it easier to manage themes. Good structure separates the content from the presentation."
+            ],
+            tough: [
+                "Cryptographic vulnerability assessments require meticulous attention to intricate algorithmic implementations. Heuristic analysis mitigates zero-day exploit scenarios by identifying behavioral anomalies rather than relying strictly on known malware signatures.",
+                "Asynchronous architectural paradigms often exacerbate race conditions if state management is not strictly regulated. Polymorphic code structures complicate static analysis procedures, necessitating advanced dynamic execution sandboxes for thorough security evaluation."
+            ]
+        };
+
+        const diff = localStorage.getItem('tyt-diff') || 'easy';
+        const fullTime = parseInt(localStorage.getItem('tyt-time')) || 60;
+        const paragraphs = data[diff];
+        
+        let timeLeft = fullTime;
+        let timerStarted = false;
+        let interval;
+        let errors = 0;
+        let soundEnabled = true;
+
+        document.getElementById('diff-label').innerText = diff.charAt(0).toUpperCase() + diff.slice(1);
+        document.getElementById('timer').innerText = timeLeft;
+
+        const display = document.getElementById('quote-display');
+        const input = document.getElementById('input-area');
+        const cursor = document.getElementById('cursor');
+        const soundBtn = document.getElementById('soundToggle');
+
+        // --- WEB AUDIO API IMPLEMENTATION ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        let clickBuffer = null;
+
+        // Fetch and Decode the audio file into memory
+        async function loadSound() {
+            try {
+                const response = await fetch('keypress.mp3');
+                const arrayBuffer = await response.arrayBuffer();
+                clickBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (error) {
+                console.error("Audio fetch failed. Check if keypress.mp3 exists:", error);
+            }
+        }
+        loadSound();
+
+        function playSound() {
+            if (!soundEnabled || !clickBuffer) return;
+
+            // Resume audio context if the browser suspended it
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = clickBuffer;
+            
+            // Randomize pitch slightly for a realistic keyboard feel
+            source.playbackRate.value = 0.9 + Math.random() * 0.2; 
+            
+            source.connect(audioCtx.destination);
+            source.start(0);
+        }
+        // ------------------------------------
+
+        // Sound Toggle Logic
+        soundBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundBtn.innerText = soundEnabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+            input.focus();
+        });
+
+        let currentQuote = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+
+        function renderQuote() {
+            const cursorDiv = cursor.outerHTML;
+            display.innerHTML = cursorDiv;
+            currentQuote.split('').forEach(char => {
+                const span = document.createElement('span');
+                span.innerText = char;
+                display.appendChild(span);
+            });
+            updateCursorPosition();
+        }
+
+        function updateCursorPosition() {
+            const spans = display.querySelectorAll('span');
+            const index = input.value.length;
+            const target = spans[index];
+            const cursorElement = document.getElementById('cursor');
+            
+            if (target) {
+                cursorElement.style.left = target.offsetLeft + "px";
+                cursorElement.style.top = target.offsetTop + "px";
+            }
+        }
+
+        // Keep focus on textarea when clicking anywhere
+        document.addEventListener('click', () => {
+            input.focus();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        });
+
+        // Trigger sound on physical keydown for zero latency feel
+        input.addEventListener('keydown', (e) => {
+            // Ignore modifiers so they don't trigger typing sounds
+            if(e.key !== 'Shift' && e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Meta') {
+                playSound();
+            }
+        });
+
+        input.addEventListener('input', () => {
+            if(!timerStarted) startTimer();
+            
+            const spans = display.querySelectorAll('span');
+            const chars = input.value.split('');
+            errors = 0; 
+
+            spans.forEach((span, i) => {
+                if (chars[i] == null) {
+                    span.className = '';
+                } else if (chars[i] === span.innerText) {
+                    span.className = 'correct';
+                } else {
+                    span.className = 'incorrect';
+                    errors++;
+                }
+            });
+
+            updateCursorPosition();
+
+            // Auto-submit if the paragraph is finished
+            if (chars.length >= currentQuote.length) {
+                finish();
+            }
+        });
+
+        function startTimer() {
+            timerStarted = true;
+            interval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if(timeLeft <= 0) finish();
+            }, 1000);
+        }
+
+        function finish() {
+            clearInterval(interval);
+            const totalCharsTyped = input.value.length;
+            const timeElapsed = fullTime - timeLeft;
+            
+            let wpm = 0;
+            if (timeElapsed > 0) {
+                const words = totalCharsTyped / 5;
+                const minutes = timeElapsed / 60;
+                wpm = Math.round(words / minutes);
+            }
+            
+            let acc = 100;
+            if (totalCharsTyped > 0) {
+                acc = Math.floor(((totalCharsTyped - errors) / totalCharsTyped) * 100);
+            }
+
+            localStorage.setItem('res-wpm', wpm);
+            localStorage.setItem('res-acc', acc);
+            window.location.href = 'result.html';
+        }
+
+        renderQuote();
+    </script>
+</body>
+</html>

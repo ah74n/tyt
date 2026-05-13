@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TYT - Results</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+        <h1 style="margin-bottom: 5px;">Test Complete!</h1>
+        <p style="color: var(--dim); font-size: 1.2rem; margin-top: 0;">
+            Great effort, <strong id="display-name" style="color: var(--primary);">User</strong>!
+        </p>
+
+        <div class="result-box">
+            <div class="res-stat">
+                <b id="final-wpm">0</b>
+                <p>Words Per Minute</p>
+            </div>
+            <div class="res-stat">
+                <b id="final-acc">0%</b>
+                <p>Accuracy</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="window.location.href='index.html'" class="btn-primary" style="width: 100%;">Start New Test</button>
+        </div>
+    </div>
+
+    <script>
+        // Apply Theme
+        document.body.setAttribute('data-theme', localStorage.getItem('tyt-theme') || 'default');
+
+        // Fetch Data
+        const userName = localStorage.getItem('tyt-name') || "Guest";
+        const wpm = localStorage.getItem('res-wpm') || 0;
+        const acc = localStorage.getItem('res-acc') || 100;
+
+        // Display Data
+        document.getElementById('display-name').innerText = userName;
+        document.getElementById('final-wpm').innerText = wpm;
+        document.getElementById('final-acc').innerText = acc + "%";
+    </script>
+</body>
+</html>

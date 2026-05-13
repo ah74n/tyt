@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TYT - Setup</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+        <h1 style="color: var(--primary);">TYT <small style="font-size: 0.5em; color: var(--dim);">v2.0</small></h1>
+        <form id="setupForm">
+            <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" id="userName" placeholder="Enter name..." required>
+            </div>
+            
+            <div class="form-group">
+                <label>Theme</label>
+                <select id="themeSelect">
+                    <option value="default">Default Dark</option>
+                    <option value="light">Clean Light</option>
+                    <option value="matrix">Matrix Green</option>
+                    <option value="dracula">Dracula</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Difficulty</label>
+                <select id="difficulty">
+                    <option value="easy">Easy (Simple Paragraphs)</option>
+                    <option value="medium">Medium (Tech & Coding)</option>
+                    <option value="tough">Tough (Complex Terms)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Time Limit (Seconds)</label>
+                <input type="number" id="timeLimit" value="60" min="15" max="300">
+            </div>
+
+            <button type="submit" class="btn-primary">Initialize Test</button>
+        </form>
+    </div>
+
+    <script>
+        // Apply saved theme on load
+        document.body.setAttribute('data-theme', localStorage.getItem('tyt-theme') || 'default');
+        document.getElementById('themeSelect').value = localStorage.getItem('tyt-theme') || 'default';
+
+        // Update theme live when selected
+        document.getElementById('themeSelect').addEventListener('change', (e) => {
+            document.body.setAttribute('data-theme', e.target.value);
+        });
+
+        document.getElementById('setupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            localStorage.setItem('tyt-name', document.getElementById('userName').value);
+            localStorage.setItem('tyt-diff', document.getElementById('difficulty').value);
+            localStorage.setItem('tyt-time', document.getElementById('timeLimit').value);
+            localStorage.setItem('tyt-theme', document.getElementById('themeSelect').value);
+            window.location.href = 'test.html';
+        });
+    </script>
+</body>
+</html>

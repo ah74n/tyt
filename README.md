@@ -1,5 +1,6 @@
 TYT (Test Your Typing) v2.0
 Live at: https://ah74n.github.io/tyt/
+
 TYT is a responsive, frontend-only typing speed tester built entirely with vanilla HTML, CSS, and JavaScript. It focuses on a clean UI, accurate performance metrics, and a highly responsive typing feel.
 
 ##Under the Hood
